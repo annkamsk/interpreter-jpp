@@ -1,0 +1,28 @@
+/* Test boolean operators */
+
+boolean callMe(int x) {
+  print("1");
+  return true;
+}
+
+int main () {
+  int x = 4;
+  if (3 <= x && 4 != 2 && true) {
+    print("true");
+  } else {
+    print("apa");
+  }
+
+  print(true == true || callMe(1));
+  if (4 < -5 && callMe(2)) {
+    print("true");
+  }
+
+  if (true == !false) {
+    print("true");
+  }
+  return 0 ;
+
+}
+
+

@@ -1,0 +1,26 @@
+int main() {
+
+  [string] a;
+  int j=0;
+  int n=10;
+  while (j<n) {
+     a = a.push("*");
+     j++;
+  }
+  j = a.len;
+  while (j > 0) {
+     string elem = a.get(j-1);
+     print(elem);
+     j--;
+  }
+  a = a.set(1, "$");
+  a = a.remove(5);
+  j = a.len;
+    while (j > 0) {
+       string elem = a.get(j-1);
+       print(elem);
+       j--;
+    }
+
+  return 0;
+}

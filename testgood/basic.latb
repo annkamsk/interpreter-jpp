@@ -1,0 +1,30 @@
+int fac(int a) {
+	int r;
+	int m;
+
+	r = 1;
+	m = a;
+	while (m > 0) {
+	  r = r * m;
+	  m = m - 1;
+	}
+	return r;
+}
+
+string repStr(string s, int n) {
+  string r = "";
+  int i = 0;
+  while(i<n) {
+    r = r++s;
+    i++;
+  }
+  return r;
+}
+
+int main() {
+    int b = fac(10);
+	print(repStr("=",60));
+	print("hello */");
+    print("/* world") ;
+    return 0 ;
+}

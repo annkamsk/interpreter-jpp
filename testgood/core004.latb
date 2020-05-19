@@ -1,0 +1,7 @@
+/* allow comparing booleans. */
+
+int main() {
+  if (true == true) { print("yay!"); }
+  return 0 ;
+
+}
