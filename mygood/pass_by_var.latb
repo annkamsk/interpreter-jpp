@@ -1,0 +1,10 @@
+string f(string a) { a=a++"c";return a;}
+
+int main() {
+    string b = f("hehe");
+    print(b);
+    print (f(&b));
+    print(b);
+    return 0 ;
+}
+

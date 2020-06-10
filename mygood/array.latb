@@ -17,8 +17,8 @@ int main() {
   a = a.remove(5);
   j = a.len;
     while (j > 0) {
-       string elem = a.get(j-1);
-       print(elem);
+       string elem2 = a.get(j-1);
+       print(elem2);
        j--;
     }
 

@@ -1,0 +1,26 @@
+
+boolean is_ok(string s) {
+    if (s == "ok") {
+        return true;
+    } else {
+        return false;
+    }
+}
+
+int main() {
+    print("lalala");
+    print(1234);
+    print(true);
+    int a;
+    print(a);
+    [int] b;
+    int j = 10;
+    while (j > 0) {
+        b = b.push(j);
+        j--;
+    }
+    print(b);
+    print(is_ok("ok"));
+    print(is_ok);
+    return 0;
+}

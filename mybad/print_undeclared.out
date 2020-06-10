@@ -1,0 +1,3 @@
+test/mybad/print_undeclared.latb
+Unbound variable: Ident "True"
+Failure by type checking

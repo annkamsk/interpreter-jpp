@@ -12,8 +12,10 @@ int main () {
   } else {
     print("apa");
   }
+  if (true == true) {
+    print("true");
+  }
 
-  print(true == true || callMe(1));
   if (4 < -5 && callMe(2)) {
     print("true");
   }

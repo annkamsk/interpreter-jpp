@@ -1,0 +1,9 @@
+test/mygood/print_any_type.latb
+Type checking successful
+"lalala"
+1234
+True
+n0ll
+[10,9,8,7,6,5,4,3,2,1]
+True
+(Str "s" ) -> Bool

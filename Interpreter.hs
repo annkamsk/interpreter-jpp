@@ -22,8 +22,14 @@ instance Show Val where
   show (IntVal n)           = show n
   show (StrVal s)           = show s
   show (BoolVal b)          = show b
-  show (ArrVal ar)          = "[" ++ show ar ++ "]"
-  show (FunVal tv args _ _) = show tv ++ "(" ++ show args ++ ")"
+  show (ArrVal ar)          = show ar
+  show (FunVal tv args _ _) = "(" ++ printArgs args ++ ") -> " ++ printReturn
+    where
+      printReturn = case tv of
+        TVType t -> show t
+        TVVoid -> show "void"
+      printArgs [] = show ""
+      printArgs ((Arg t (Ident s)):args) = show t ++ " " ++ show s ++ " "
   show NullVal              = "n0ll"
 
 instance Eq Val where
@@ -39,6 +45,9 @@ instance Ord Val where
   compare (StrVal s1) (StrVal s2) = compare s1 s2
   compare (BoolVal b1) (BoolVal b2) = compare b1 b2
   compare (ArrVal ar1) (ArrVal ar2) = compare ar1 ar2
+  compare NullVal NullVal = EQ
+  compare NullVal _ = LT
+  compare _ NullVal = GT
 
 type Loc = Integer
 
@@ -187,10 +196,13 @@ eval (ArrayLen e1) = do
 eval (ArraySet e1 e2 e3) = do
   ArrVal ar <- eval e1
   IntVal idx <- eval e2
-  val <- eval e3
-  let (x, _:ys) = splitAt (fromInteger idx) ar
-  let ar2 = x ++ [val] ++ ys
-  return $ ArrVal ar2
+  if idx < 0 || idx >= toInteger (length ar)
+    then throwError ("Index out of bounds: idx=" ++ show idx ++ " while array of size " ++ show (length ar))
+    else do
+      val <- eval e3
+      let (x, _:ys) = splitAt (fromInteger idx) ar
+      let ar2 = x ++ [val] ++ ys
+      return $ ArrVal ar2
 eval (ArrayPush e1 e2) = do
   ArrVal ar <- eval e1
   val <- eval e2
@@ -198,12 +210,16 @@ eval (ArrayPush e1 e2) = do
 eval (ArrayRem e1 e2) = do
   ArrVal ar <- eval e1
   IntVal idx <- eval e2
-  let (x, _:ys) = splitAt (fromInteger idx) ar
-  return $ ArrVal $ x ++ ys
+  if idx < 0 || idx >= toInteger (length ar)
+    then throwError ("Index out of bounds: idx=" ++ show idx ++ " while array of size " ++ show (length ar))
+    else do
+    let (x, _:ys) = splitAt (fromInteger idx) ar
+    return $ ArrVal $ x ++ ys
 eval (EApp id vars) = do
   presEnv <- ask
   FunVal tv args envDec b <- getVar id
-  envWithArgs <- local (const envDec) (saveArgs args vars)
+  envWithArgs <- local (const envDec) (saveArgs presEnv args vars)
+
   (envres, res) <- local (const envWithArgs) (exec $ BStmt b)
   case tv of
     TVVoid -> return NullVal
@@ -212,15 +228,16 @@ eval (EApp id vars) = do
         Nothing -> throwError ("Nothing returned from the function " ++ show id)
         Just val -> return val
   where
-    saveArgs [] [] = ask
-    saveArgs (Arg t id:as) (v:vs) = do
-      env <- saveArgs as vs
+    saveArgs presEnv [] [] = ask
+    saveArgs presEnv (Arg t id:as) (v:vs) = do
+      env <- saveArgs presEnv as vs
       case v of
         ExprRefE e -> do
           val <- local (const env) (eval e)
-          local (const env) (saveNewVar id val)
-        ExprRefR id -> do
-          loc <- local (const env) (getLoc id)
+          local (const env) (saveVar id val)
+          return env
+        ExprRefR varid -> do
+          loc <- local (const presEnv) (getLoc varid)
           return $ Map.insert id loc env
 
 exec :: Stmt -> Interp ReturnVal
@@ -238,13 +255,16 @@ exec (Decr id) = do
   saveVar id (IntVal (n - 1))
   end
 exec (While e b) = do
+  presEnv <- ask
   BoolVal v <- eval e
   if v
     then do
-      (env, res) <- exec $ BStmt b
+      (env, res) <- local (const presEnv) (exec $ BStmt b)
       case res of
-        Nothing -> exec (While e b)
-        _       -> return (env, res)
+        Nothing -> do 
+          (env, res) <- local (const env) (exec (While e b))
+          return (presEnv, res)
+        _       -> return (presEnv, res)
     else end
 exec (BStmt (Block [])) = end
 exec (BStmt (Block (s:b))) = do
@@ -295,7 +315,8 @@ exec (CondElse e b1 b2) = do
 
 execTopDef :: TopDef -> Interp ReturnVal
 execTopDef (FnDef tv id args b) = do
-  env <- saveNewVar id NullVal
+  envWithFun <- saveNewVar id NullVal
+  env <- local (const envWithFun) (saveArgs args)
   let f = FunVal tv args env b
   local (const env) (saveVar id f)
   let Ident name = id
@@ -305,6 +326,11 @@ execTopDef (FnDef tv id args b) = do
       return (env, res)
     else
       return (env, Nothing)
+  where
+      saveArgs [] = ask
+      saveArgs (Arg t id:as) = do
+        env <- saveArgs as
+        local (const env) (saveNewVar id NullVal)
 
 execProgram :: Program -> Interp ReturnVal
 execProgram (Program []) = end

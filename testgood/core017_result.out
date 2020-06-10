@@ -1,7 +1,0 @@
-test/mygood/core017.latb
-Expected type Right (TVType Str) but got Right (TVType Bool)
-"true"
-"1"
-True
-"1"
-"true"

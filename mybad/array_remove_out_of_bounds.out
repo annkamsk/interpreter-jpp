@@ -1,0 +1,3 @@
+test/mybad/array_remove_out_of_bounds.latb
+Type checking successful
+Runtime exception: Index out of bounds: idx=1 while array of size 0

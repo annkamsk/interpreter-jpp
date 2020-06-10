@@ -11,6 +11,7 @@ import           Control.Monad.Trans.Except
 import           Control.Monad.Writer
 import           Data.Either                (isLeft)
 import qualified Data.Map                   as Map
+import           Data.List                  as List
 import           Data.Maybe
 import           Data.Typeable
 import           ErrM                       (Err (Bad))
@@ -30,6 +31,11 @@ type ReturnVal = (TCEnv, TCType)
 
 type ReturnExp = TCType
 
+showReturnExp :: ReturnExp -> String
+showReturnExp (Right (TVType s)) = show s
+showReturnExp (Right void) = show "void"
+showReturnExp (Left (FunType tv targs)) = show targs ++ show "->" ++ show tv
+
 toReturn :: Type -> ReturnExp
 toReturn t = Right $ TVType t
 
@@ -41,19 +47,33 @@ end = do
 runCheck :: TCEnv -> TChecker a -> (Either String a, [String])
 runCheck env ev = runIdentity (runWriterT (runExceptT (runReaderT ev env)))
 
+typeCheckFail :: [String] -> IO ()
+typeCheckFail msg = do
+  mapM_ putStrLn msg
+  putStrLn "Failure by type checking"
+  exitFailure
+
+typeCheckWarn :: [String] -> IO ()
+typeCheckWarn msg = if all (isPrefixOf "Warning:") msg 
+  then do
+    mapM_ putStrLn msg
+    putStrLn "Type checking successful" 
+  else typeCheckFail msg
+  
 typeCheck :: Program -> IO ()
 typeCheck p = do
   let (err, msg) = runCheck Map.empty (typeCheckProgram p)
   case err of
     Left s -> do
       putStrLn s
-      mapM_ putStrLn msg
-      exitFailure
-    Right _ -> mapM_ putStrLn msg
+      typeCheckFail msg
+    Right _ -> case msg of
+                 [] -> putStrLn "Type checking successful"
+                 _ -> typeCheckWarn msg
 
 assertType :: ReturnExp -> ReturnExp -> TChecker ReturnExp
 assertType actual expected = do
-  when (actual /= expected) $ tell ["Expected type " ++ show expected ++ " but got " ++ show actual]
+  when (actual /= expected) $ tell ["Expected type " ++ showReturnExp expected ++ " but got " ++ showReturnExp actual]
   return expected
 
 assertTypeExpr :: Expr -> TCType -> TChecker ReturnExp
@@ -101,8 +121,8 @@ saveTypeInEnv id t = do
   case Map.lookup id env of
     Nothing -> return $ Map.insert id t env
     Just val -> do
-      tell ["Variable already declared " ++ show id]
-      return env
+      tell ["Warning: Variable already declared " ++ show id]
+      return $ Map.insert id t env
 
 typeCheckExprOrRef :: ExprOrRef -> TChecker ReturnExp
 typeCheckExprOrRef er =
@@ -136,7 +156,7 @@ typeCheckExpr (EOr e1 e2) = assertResultBool e1 e2
 typeCheckExpr (Not e1) = assertResultBool e1 ELitTrue
 typeCheckExpr (Neg e1) = assertResultInt e1 (ELitInt 0)
 
--- FUNCTIONA
+-- FUNCTION APP
 typeCheckExpr (EApp id args) = do
   t <- getTypeFromEnv id
   case t of
@@ -187,7 +207,7 @@ typeCheckExpr (ArrayRem exp1 exp2) = do
   ar <- typeCheckExpr exp1
   assertTypeExpr exp2 (Right $ TVType AbsGrammar.Int)
   case ar of
-    Right (TVType (Array t)) -> return $ Right $ TVType t
+    Right (TVType (Array t)) -> return $ Right $ TVType $ Array t
     _ -> do
       tell ["First argument must be of Array type"]
       return $ Right TVVoid
@@ -195,13 +215,17 @@ typeCheckExpr (ArrayRem exp1 exp2) = do
 -- STATEMENTS
 typeCheckStmt :: Stmt -> TChecker (TCEnv, ReturnExp)
 typeCheckStmt Empty = end
-typeCheckStmt (BStmt (Block b)) =
+-- FIXME deklaracja nowych zmiennych w bloku - ok
+typeCheckStmt (BStmt (Block b)) = do
+  presEnv <- ask
   case b of
-    [x] -> typeCheckStmt x
+    [x] -> do
+      (env, res) <- local (const presEnv) (typeCheckStmt x)
+      return (presEnv, res)
     (x:xs) -> do
       (env, res) <- typeCheckStmt x
       (newenv, res) <- local (const env) (typeCheckStmt $ BStmt $ Block xs)
-      return (newenv, res)
+      return (presEnv, res)
     _ -> typeCheckStmt Empty
 typeCheckStmt (Decl t vars) =
   case vars of
@@ -243,7 +267,7 @@ typeCheckStmt (While exp b) = do
   assertTypeExpr exp (Right $ TVType AbsGrammar.Bool)
   typeCheckStmt (BStmt b)
 typeCheckStmt (Print exp) = do
-  assertTypeExpr exp (Right $ TVType Str)
+  typeCheckExpr exp
   end
 typeCheckStmt (SExp exp) = do
   typeCheckExpr exp

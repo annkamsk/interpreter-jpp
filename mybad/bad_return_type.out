@@ -1,0 +1,3 @@
+test/mybad/bad_return_type.latb
+Expected type Bool but got "void"
+Failure by type checking

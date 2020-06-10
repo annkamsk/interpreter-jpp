@@ -1,0 +1,5 @@
+boolean callMe(int x) {
+    print("1");
+    if (x==1) {x=x+2;return true;}
+    else {x=x+1;}
+}
