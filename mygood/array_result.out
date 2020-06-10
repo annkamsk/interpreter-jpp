@@ -1,6 +1,5 @@
-test/mygood/array.latb
-Expected type Right (TVType (Array Str)) but got Right (TVType Str)
-Variable already declared Ident "elem"
+mygood/array.latb
+Type checking successful
 "*"
 "*"
 "*"

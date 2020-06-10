@@ -1,4 +1,4 @@
-test/mygood/local_scope_var.latb
+mygood/local_scope_var.latb
 Warning: Variable already declared Ident "elem"
 Warning: Variable already declared Ident "elem"
 Type checking successful

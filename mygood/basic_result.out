@@ -1,4 +1,5 @@
-test/mygood/basic.latb
+mygood/basic.latb
+Type checking successful
 "============================================================"
 "hello */"
 "/* world"

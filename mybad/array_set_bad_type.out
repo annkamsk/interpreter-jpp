@@ -1,3 +1,3 @@
-test/mybad/array_set_bad_type.latb
+mybad/array_set_bad_type.latb
 Expected type Array Int but got Int
 Failure by type checking

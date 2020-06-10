@@ -1,4 +1,4 @@
-test/mygood/local_scope_var_change.latb
+mygood/local_scope_var_change.latb
 Warning: Variable already declared Ident "elem"
 Type checking successful
 "ola"
