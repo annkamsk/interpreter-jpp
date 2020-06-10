@@ -41,8 +41,7 @@ lub wywołanie funkcji ze złą liczbą argumentów
 ### Zmienne
 - Możliwa jest powtórna deklaracja zmiennych - typechecking wówczas zwróci warning, ale pozwoli programowi działać dalej
 - Jeśli ponowna deklaracja dzieje się wewnątrz bloku while, to zmienna zewnętrzna jest przysłaniana na czas trwania bloku
-
-
+- testy: `mygood/local_scope_var_change.latb`, `mygood/local_scope_var.latb`
 
 
 
